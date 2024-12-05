@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "1.8.22"
 }
 
 sourceSets {
@@ -10,6 +10,7 @@ sourceSets {
 
 tasks {
     wrapper {
-        gradleVersion = "8.11.1"
+        gradleVersion = "7.5"
+        distributionType = Wrapper.DistributionType.BIN
     }
 }
