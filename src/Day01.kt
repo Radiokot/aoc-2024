@@ -1,21 +1,29 @@
+import kotlin.math.abs
+
 fun main() {
-    fun part1(input: List<String>): Int {
-        return input.size
+    val listA = mutableListOf<Int>()
+    val listB = mutableListOf<Int>()
+
+    readInput(day = 1)
+        .forEach { line ->
+            line.split("   ").also {
+                listA.add(it[0].toInt())
+                listB.add(it[1].toInt())
+            }
+        }
+
+    listA.sort()
+    listB.sort()
+
+    var totalDifferences = 0
+    listA.mapIndexed { i, valueA ->
+        val valueB = listB[i]
+        totalDifferences += abs(valueA - valueB)
     }
 
-    fun part2(input: List<String>): Int {
-        return input.size
-    }
+    val mapB = listB.groupBy { it }
+    val similarityScore = listA.sumOf { it * (mapB[it]?.size ?: 0) }
 
-    // Test if implementation meets criteria from the description, like:
-    check(part1(listOf("test_input")) == 1)
-
-    // Or read a large test input from the `src/Day01_test.txt` file:
-    val testInput = readInput("Day01_test")
-    check(part1(testInput) == 1)
-
-    // Read the input from the `src/Day01.txt` file.
-    val input = readInput("Day01")
-    part1(input).println()
-    part2(input).println()
+    println(totalDifferences)
+    println(similarityScore)
 }
