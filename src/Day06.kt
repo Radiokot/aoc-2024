@@ -26,7 +26,9 @@ value class Position(private val pair: Pair<Int, Int>) {
         )
 }
 
-class GoingInCirclesException : Exception()
+class GoingInCirclesException(
+    val visits: VisitMap,
+) : Exception()
 
 typealias VisitMap = MutableMap<Position, MutableSet<Direction>>
 
@@ -41,7 +43,7 @@ fun patrol(
 
     while (true) {
         if (visits[position]?.contains(direction) == true) {
-            throw GoingInCirclesException()
+            throw GoingInCirclesException(visits)
         }
 
         visits.getOrPut(position, ::mutableSetOf).add(direction)
@@ -67,28 +69,27 @@ fun patrol(
     return visits
 }
 
+fun printField(
+    field: List<CharArray>,
+    visits: VisitMap,
+) =
+    field.forEachIndexed { y, line ->
+        line.forEachIndexed { x, char ->
+            print(visits[Position(x, y)]?.lastOrNull()?.marker ?: char)
+        }
+        println()
+    }
+
 fun main() {
     val input =
-        readInput(day = 6)
-//        """
-//            ....#.....
-//            .........#
-//            ..........
-//            ..#.......
-//            .......#..
-//            ..........
-//            .#..^.....
-//            ........#.
-//            #.........
-//            ......#...
-//        """.trimIndent().lines()
+        readInput("Day06_test")
+//        readInput(day = 6)
             .map(String::toCharArray)
 
     val startPosition = input
         .indexOfFirst { it.contains('^') }
         .let { y -> input[y].indexOf('^') to y }
         .let(::Position)
-
 
     // Part 1.
     val visits = patrol(
