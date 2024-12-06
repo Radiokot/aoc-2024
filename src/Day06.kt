@@ -32,14 +32,21 @@ class GoingInCirclesException(
 
 typealias VisitMap = MutableMap<Position, MutableSet<Direction>>
 
+data class PatrolResult(
+    val visits: VisitMap,
+    val possibleObstacles: Set<Position>,
+)
+
 fun patrol(
     field: List<CharArray>,
     startPosition: Position,
     startDirection: Direction,
-): VisitMap {
+    tryObstacles: Boolean = false,
+): PatrolResult {
     var position = startPosition
     var direction = startDirection
     val visits: MutableMap<Position, MutableSet<Direction>> = mutableMapOf()
+    val possibleObstacles = mutableSetOf<Position>()
 
     while (true) {
         if (visits[position]?.contains(direction) == true) {
@@ -49,24 +56,36 @@ fun patrol(
         visits.getOrPut(position, ::mutableSetOf).add(direction)
 
         val nextStepPosition = position.step(direction)
-        val nextStepTile = runCatching { field[nextStepPosition.y][nextStepPosition.x] }.getOrNull()
+        val nextStepTile = runCatching { field[nextStepPosition.y][nextStepPosition.x] }
+            .getOrNull()
+            ?: return PatrolResult(visits, possibleObstacles)
 
         when (nextStepTile) {
             '#', 'O' -> {
                 direction = direction.turnClockwise()
             }
 
-            null -> {
-                break
-            }
-
             else -> {
+                if (tryObstacles) {
+                    try {
+                        field[nextStepPosition.y][nextStepPosition.x] = 'O'
+                        patrol(
+                            field = field,
+                            startPosition = startPosition,
+                            startDirection = startDirection,
+                            tryObstacles = false,
+                        )
+                    } catch (target: GoingInCirclesException) {
+                        possibleObstacles.add(nextStepPosition)
+                    } finally {
+                        field[nextStepPosition.y][nextStepPosition.x] = nextStepTile
+                    }
+                }
+
                 position = nextStepPosition
             }
         }
     }
-
-    return visits
 }
 
 fun printField(
@@ -82,8 +101,7 @@ fun printField(
 
 fun main() {
     val input =
-        readInput("Day06_test")
-//        readInput(day = 6)
+        readInput(day = 6)
             .map(String::toCharArray)
 
     val startPosition = input
@@ -91,33 +109,12 @@ fun main() {
         .let { y -> input[y].indexOf('^') to y }
         .let(::Position)
 
-    // Part 1.
-    val visits = patrol(
+    val (visits, possibleObstacles) = patrol(
         field = input,
         startPosition = startPosition,
         startDirection = Direction.N,
+        tryObstacles = true,
     )
     println(visits.size)
-
-    // Part 2.
-    val possibleObstacles = mutableSetOf<Position>()
-    input.forEachIndexed { y, line ->
-        line.forEachIndexed { x, char ->
-            if (char == '.') {
-                try {
-                    line[x] = 'O'
-                    patrol(
-                        field = input,
-                        startPosition = startPosition,
-                        startDirection = Direction.N,
-                    )
-                } catch (target: GoingInCirclesException) {
-                    possibleObstacles.add(Position(x, y))
-                } finally {
-                    line[x] = char
-                }
-            }
-        }
-    }
     println(possibleObstacles.size)
 }
