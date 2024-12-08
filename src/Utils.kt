@@ -15,3 +15,24 @@ fun readInput(
 ) = readInput(
     name = "Day${day.toString().padStart(2, '0')}" + (if (test) "_test" else "")
 )
+
+@JvmInline
+value class Position(private val pair: Pair<Int, Int>) {
+    constructor(x: Int, y: Int) : this(x to y)
+
+    val x: Int
+        get() = pair.first
+
+    val y: Int
+        get() = pair.second
+
+    fun step(direction: Direction) =
+        Position(
+            x = x + direction.incX,
+            y = y + direction.incY,
+        )
+
+    operator fun component1(): Int = x
+
+    operator fun component2(): Int = y
+}

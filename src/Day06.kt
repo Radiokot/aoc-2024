@@ -9,23 +9,6 @@ enum class Direction(val incX: Int, val incY: Int, val marker: Char) {
         values()[(this.ordinal + 1) % values().size]
 }
 
-@JvmInline
-value class Position(private val pair: Pair<Int, Int>) {
-    constructor(x: Int, y: Int) : this(x to y)
-
-    val x: Int
-        get() = pair.first
-
-    val y: Int
-        get() = pair.second
-
-    fun step(direction: Direction) =
-        Position(
-            x = x + direction.incX,
-            y = y + direction.incY,
-        )
-}
-
 class GoingInCirclesException(
     val visits: VisitMap,
 ) : Exception()
