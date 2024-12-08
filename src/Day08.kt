@@ -24,25 +24,23 @@ fun findAntinodes(
     val dX = antennaB.x - antennaA.x
     val dY = antennaB.y - antennaA.y
 
-    return buildSet {
-        depthRange.forEach { currentDepth ->
-            val currentDepthAntinodes = listOf(
-                Position(
-                    x = antennaB.x + dX * currentDepth,
-                    y = antennaB.y + dY * currentDepth,
-                ),
-                Position(
-                    x = antennaA.x - dX * currentDepth,
-                    y = antennaA.y - dY * currentDepth,
-                )
+    return depthRange.fold(setOf()) { antinodes, currentDepth ->
+        val currentDepthAntinodes = listOf(
+            Position(
+                x = antennaB.x + dX * currentDepth,
+                y = antennaB.y + dY * currentDepth,
+            ),
+            Position(
+                x = antennaA.x - dX * currentDepth,
+                y = antennaA.y - dY * currentDepth,
             )
-                .filter { (x, y) -> x in fieldXRange && y in fieldYRange }
+        )
+            .filter { (x, y) -> x in fieldXRange && y in fieldYRange }
 
-            if (currentDepthAntinodes.isNotEmpty()) {
-                addAll(currentDepthAntinodes)
-            } else {
-                return this
-            }
+        if (currentDepthAntinodes.isEmpty()) {
+            return antinodes
+        } else {
+            return@fold antinodes + currentDepthAntinodes
         }
     }
 }
