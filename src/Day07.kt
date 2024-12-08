@@ -1,3 +1,8 @@
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+
 fun canReach(
     target: Long,
     operands: List<Long>,
@@ -15,7 +20,7 @@ fun canReach(
         }
     }
 
-fun main() {
+fun main() = runBlocking(Dispatchers.Default) {
     val input =
         readInput(
             day = 7,
@@ -35,16 +40,26 @@ fun main() {
         { a: Long, b: Long -> a * b },
     )
     var part2 = 0L
-    val part2Operators = part1Operators + { a: Long, b: Long -> "$a$b".toLong() }
-
-    input.forEach { (target, operands) ->
-        if (canReach(target, operands, part1Operators)) {
-            part1 += target
-            part2 += target
-        } else if (canReach(target, operands, part2Operators)) {
-            part2 += target
+    val part2Operators = part1Operators + { a: Long, b: Long ->
+        var aMultiplied = a
+        var bDivided = b
+        while (bDivided > 0) {
+            aMultiplied *= 10
+            bDivided /= 10
         }
+        aMultiplied + b
     }
+
+    input.map { (target, operands) ->
+        async {
+            if (canReach(target, operands, part1Operators)) {
+                part1 += target
+                part2 += target
+            } else if (canReach(target, operands, part2Operators)) {
+                part2 += target
+            }
+        }
+    }.awaitAll()
 
     println(part1)
     println(part2)
