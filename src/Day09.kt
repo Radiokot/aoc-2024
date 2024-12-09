@@ -12,6 +12,56 @@ fun printMap(map: List<Int>) {
     )
 }
 
+fun getFreeSpaceSequence(map: List<Int>): Sequence<IntRange> = sequence {
+    // The map can't start with free space.
+    var start = -1
+
+    for (i in map.indices) {
+        val current = map[i]
+        val prev = map.getOrNull(i - 1) ?: -2
+
+        if (i == map.lastIndex && current < 0) {
+            yield(start..i)
+        }
+
+        if (current != prev) {
+            if (current < 0) {
+                start = i
+            } else if (prev < 0 && start >= 0) {
+                yield(start until i)
+            }
+        }
+    }
+}
+
+fun getFileRightSequence(map: List<Int>): Sequence<IntRange> = sequence {
+    var end = -1
+
+    for (i in map.indices.reversed()) {
+        val current = map[i]
+        val prev = map.getOrNull(i + 1) ?: -1
+
+        if (i == 0 && end >= 0) {
+            yield(0..end)
+        }
+
+        if (current != prev) {
+            if (prev >= 0 && end >= 0) {
+                yield((i + 1)..end)
+            }
+            if (current >= 0) {
+                end = i
+            }
+        }
+    }
+}
+
+fun getChecksum(map: List<Int>): Long =
+    map
+        .asSequence()
+        .mapIndexed { i, fileIndex -> i.toLong() * fileIndex.coerceAtLeast(0) }
+        .sum()
+
 fun main() {
     val input = readInput(day = 9, test = false)
         .first()
@@ -27,80 +77,42 @@ fun main() {
     }
 
     val compactMap = map.toMutableList()
-    var compactChecksum = 0L
-    for (i in compactMap.indices) {
-        val currentIndex = compactMap[i]
-
-        if (currentIndex >= 0) {
-            compactChecksum += i * currentIndex.toLong()
-            continue
-        }
-
-        val lastFileBlockIndex = compactMap.indexOfLast { it >= 0 }
-        if (lastFileBlockIndex > i) {
-            compactMap[i] = compactMap[lastFileBlockIndex]
-            compactMap[lastFileBlockIndex] = -1
-            compactChecksum += i * compactMap[i].toLong()
-        } else {
-            break
+    freeSpaceLoop@ for (freeSpace in getFreeSpaceSequence(map)) {
+        var remainingFreeSpace = freeSpace
+        while (!remainingFreeSpace.isEmpty()) {
+            val lastFile = getFileRightSequence(compactMap).firstOrNull()
+            if (lastFile == null || lastFile.first < remainingFreeSpace.first) {
+                break@freeSpaceLoop
+            }
+            var written = 0
+            remainingFreeSpace.zip(lastFile.reversed()).forEach { (iFreeSpace, iFile) ->
+                compactMap[iFreeSpace] = compactMap[iFile]
+                compactMap[iFile] = -1
+                written++
+            }
+            remainingFreeSpace = (remainingFreeSpace.first + written)..remainingFreeSpace.last
         }
     }
 
     val compactDefragMap = map.toMutableList()
-    val filesTailSeq = sequence<IntRange> {
-        var end = -1
-
-        for (i in map.indices.reversed()) {
-            val current = map[i]
-            val prev = map.getOrNull(i + 1) ?: -1
-
-            if (i == 0 && end >= 0) {
-                yield(0..end)
+    for (file in getFileRightSequence(map)) {
+        var suitableFreeSpace: IntRange? = null
+        for (freeSpace in getFreeSpaceSequence(compactDefragMap)) {
+            if (freeSpace.first > file.first) {
+                break
+            } else if (freeSpace.count() >= file.count()) {
+                suitableFreeSpace = freeSpace
+                break
             }
-
-            if (current != prev) {
-                if (prev >= 0 && end >= 0) {
-                    yield((i + 1)..end)
-                }
-                if (current >= 0) {
-                    end = i
-                }
+        }
+        if (suitableFreeSpace != null) {
+            file.zip(suitableFreeSpace).forEach { (iFile, iFreeSpace) ->
+                compactDefragMap[iFreeSpace] = compactDefragMap[iFile]
+                compactDefragMap[iFile] = -1
             }
         }
     }
 
-    filesTailSeq.forEach { file ->
-        val pitsHeadSeq = sequence<IntRange> {
-            var start = -1
-            for (i in compactDefragMap.indices) {
-                val current = compactDefragMap[i]
-                val prev = compactDefragMap.getOrNull(i - 1) ?: -2
-
-                if (i == compactDefragMap.lastIndex && current < 0) {
-                    yield(start..i)
-                }
-
-                if (current != prev) {
-                    if (current < 0) {
-                        start = i
-                    } else if (prev < 0 && start >= 0) {
-                        yield(start until i)
-                    }
-                }
-            }
-        }
-        val suitablePit = pitsHeadSeq.firstOrNull { it.first < file.first && it.count() >= file.count() }
-        if (suitablePit != null) {
-            file.zip(suitablePit).forEach { (fileI, pitI) ->
-                compactDefragMap[pitI] = compactDefragMap[fileI]
-                compactDefragMap[fileI]=-1
-            }
-        }
-    }
-
-//    printMap(map)
-//    printMap(compactMap)
-//    printMap(compactDefragMap)
-    println(compactChecksum)
-    println(compactDefragMap.mapIndexed{ i, fileIndex -> i.toLong() * fileIndex.coerceAtLeast(0) }.sum())
+    println(getChecksum(compactMap))
+    println(getChecksum(compactDefragMap))
 }
