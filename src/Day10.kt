@@ -5,12 +5,12 @@ fun main() {
             line.map { it.digitToIntOrNull() ?: -1 }
         }
 
-    fun getReachablePeaks(start: Position): Set<Position> {
+    fun getReachablePeaks(start: Position): List<Position> {
         val currentHeight = input.getOrNull(start)
-            ?: return emptySet()
+            ?: return emptyList()
 
         if (currentHeight == 9) {
-            return setOf(start)
+            return listOf(start)
         }
 
         return sequenceOf(
@@ -22,17 +22,21 @@ fun main() {
             .filter { input.getOrNull(it) == currentHeight + 1 }
             .map(::getReachablePeaks)
             .flatten()
-            .toSet()
+            .toList()
     }
 
     var totalScore = 0
+    var totalRating = 0
     input.forEachIndexed { y, line ->
         line.forEachIndexed { x, height ->
             if (height == 0) {
-                totalScore += getReachablePeaks(Position(x, y)).size
+                val reachablePicks = getReachablePeaks(Position(x, y))
+                totalScore += reachablePicks.distinct().size
+                totalRating += reachablePicks.size
             }
         }
     }
 
     println(totalScore)
+    println(totalRating)
 }
