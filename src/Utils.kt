@@ -36,3 +36,9 @@ value class Position(private val pair: Pair<Int, Int>) {
 
     operator fun component2(): Int = y
 }
+
+fun <T : Any?> List<List<T>>.get(position: Position): T =
+    this[position.y][position.x]
+
+fun <T : Any?> List<List<T>>.getOrNull(position: Position): T? =
+    this.getOrNull(position.y)?.getOrNull(position.x)
