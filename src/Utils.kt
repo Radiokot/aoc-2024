@@ -35,10 +35,17 @@ value class Position(private val pair: Pair<Int, Int>) {
     operator fun component1(): Int = x
 
     operator fun component2(): Int = y
+
+    infix fun touches(other: Position): Boolean =
+        this.y == other.y && (this.x == other.x + 1 || this.x == other.x - 1) ||
+                this.x == other.x && (this.y == other.y + 1 || this.y == other.y - 1)
 }
 
-fun <T : Any?> List<List<T>>.get(position: Position): T =
+operator fun <T : Any?> List<List<T>>.get(position: Position): T =
     this[position.y][position.x]
 
 fun <T : Any?> List<List<T>>.getOrNull(position: Position): T? =
     this.getOrNull(position.y)?.getOrNull(position.x)
+
+operator fun <T : Any?> List<MutableList<T>>.set(position: Position, value: T): T =
+    this[position.y].set(position.x, value)
