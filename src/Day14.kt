@@ -1,3 +1,5 @@
+import java.util.*
+
 fun main() {
     val test = false
 
@@ -9,7 +11,10 @@ fun main() {
         }
     }
 
-    fun printMap(highContrast: Boolean = false) {
+    fun printMap(
+        map: List<List<Set<Robot>>>,
+        highContrast: Boolean = false
+    ) {
         map.forEach { row ->
             println(row.joinToString("") { robots ->
                 if (!highContrast) {
@@ -33,11 +38,16 @@ fun main() {
             )
         }
 
-    println("Was:")
-    printMap()
+//    println("Was:")
+//    printMap(map)
 
-    repeat(10000) {
+    val iterationCount = 10000
+    val lowestSafetyIterations = LinkedList<Triple<Int, Int, List<List<Set<Robot>>>>>()
+
+    repeat(iterationCount) { i ->
+        val countByQuadrant = IntArray(4)
         val movedRobots = mutableSetOf<Robot>()
+
         for (y in (0 until mapHeight)) {
             for (x in (0 until mapWidth)) {
                 val currentPosition = Position(x, y)
@@ -50,40 +60,44 @@ fun main() {
                         map[currentPosition] -= robot
                         map[newRobotPosition] += robot
                         movedRobots += robot
+
+                        if (newRobotPosition.x < mapWidth / 2) {
+                            if (newRobotPosition.y < mapHeight / 2) {
+                                countByQuadrant[0]++
+                            } else if (newRobotPosition.y > mapHeight / 2) {
+                                countByQuadrant[2]++
+                            }
+                        } else if (newRobotPosition.x > mapWidth / 2) {
+                            if (newRobotPosition.y < mapHeight / 2) {
+                                countByQuadrant[1]++
+                            } else if (newRobotPosition.y > mapHeight / 2) {
+                                countByQuadrant[3]++
+                            }
+                        }
                     }
             }
         }
 
-        if (it > 5000) {
-            // High contrast helps to identify the tree
-            // in the output using the VS code small scale overview.
-            printMap(highContrast = true)
-            println(it)
-        }
-    }
-
-
-    val countByQuadrant = IntArray(4)
-    for (y in (0 until mapHeight)) {
-        for (x in (0 until mapWidth)) {
-            val currentPosition = Position(x, y)
-            val currentCount = map[currentPosition].size
-            if (x < mapWidth / 2) {
-                if (y < mapHeight / 2) {
-                    countByQuadrant[0] += currentCount
-                } else if (y > mapHeight / 2) {
-                    countByQuadrant[2] += currentCount
-                }
-            } else if (x > mapWidth / 2) {
-                if (y < mapHeight / 2) {
-                    countByQuadrant[1] += currentCount
-                } else if (y > mapHeight / 2) {
-                    countByQuadrant[3] += currentCount
-                }
+        val safetyFactor = countByQuadrant.reduce { factor, count -> factor * count }
+        if (safetyFactor < (lowestSafetyIterations.peek()?.first ?: Int.MAX_VALUE)) {
+            val mapCopy = map.map { row ->
+                row.map(Set<Robot>::toMutableSet)
             }
+            lowestSafetyIterations.push(Triple(safetyFactor, i + 1, mapCopy))
+        }
+
+        if (i == iterationCount - 1) {
+            println(safetyFactor)
         }
     }
-    println(countByQuadrant.reduce { factor, count -> factor * count })
+
+    // Maps with robots gathering close to each other have low safety.
+    lowestSafetyIterations
+        .take(lowestSafetyIterations.size.coerceAtMost(3))
+        .forEach {
+            println("Iteration #${it.second} had safety ${it.first}")
+            printMap(it.third, highContrast = true)
+        }
 }
 
 data class Robot(
