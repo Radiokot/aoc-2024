@@ -7,6 +7,20 @@ enum class Direction(val incX: Int, val incY: Int, val marker: Char) {
 
     fun turnClockwise() =
         values()[(this.ordinal + 1) % values().size]
+
+    fun turnBack() =
+        values()[(this.ordinal + 2) % values().size]
+
+    companion object {
+        fun fromMarker(marker: Char): Direction =
+            when (marker) {
+                '^' -> N
+                '>' -> E
+                'v' -> S
+                '<' -> W
+                else -> throw IllegalArgumentException("Unknown direction marker '$marker'")
+            }
+    }
 }
 
 class GoingInCirclesException(
