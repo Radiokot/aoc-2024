@@ -52,7 +52,7 @@ fun patrol(
 
         visits.getOrPut(position, ::mutableSetOf).add(direction)
 
-        val nextStepPosition = position.step(direction)
+        val nextStepPosition = position.move(direction)
         val nextStepTile = runCatching { field[nextStepPosition.y][nextStepPosition.x] }
             .getOrNull()
             ?: return PatrolResult(visits, possibleObstacles)

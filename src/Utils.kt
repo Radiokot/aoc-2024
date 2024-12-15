@@ -26,10 +26,16 @@ value class Position(private val pair: Pair<Int, Int>) {
     val y: Int
         get() = pair.second
 
-    fun step(direction: Direction) =
+    fun move(direction: Direction) =
+        move(
+            dx = direction.incX,
+            dy = direction.incY,
+        )
+
+    fun move(dx: Int = 0, dy: Int = 0) =
         Position(
-            x = x + direction.incX,
-            y = y + direction.incY,
+            x = x + dx,
+            y = y + dy,
         )
 
     operator fun component1(): Int = x

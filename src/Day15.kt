@@ -4,13 +4,32 @@ fun main() {
     val WALL = '#'
     val ROBOT = '@'
     val BOX = 'O'
+    val WIDE_BOX = "[]"
     val FREE = '.'
 
     val input = readInput(day = 15, test = false)
+    val wideMap = true
 
     val map: List<MutableList<Char>> = input
         .filter { it.startsWith(WALL) }
-        .map(String::toMutableList)
+        .map { row ->
+            if (wideMap) {
+                row.flatMap { cell ->
+                    when (cell) {
+                        WALL,
+                        FREE -> listOf(cell, cell)
+
+                        BOX -> WIDE_BOX.toList()
+
+                        ROBOT -> listOf(ROBOT, FREE)
+
+                        else -> error("Unknown cell type '$cell'")
+                    }
+                }.toMutableList()
+            } else {
+                row.toMutableList()
+            }
+        }
 
     fun printMap(map: List<List<Char>>) {
         map.forEach { row ->
@@ -33,55 +52,144 @@ fun main() {
             )
         }
 
+    println("Initial state:")
     printMap(map)
     println(directions)
 
-    fun moveObject(
-        at: Position,
+    fun addPositionsToMove(
+        addTo: MutableSet<Position>,
+        from: Position,
         direction: Direction,
     ) {
-        val to = at.step(direction)
-
-        if (map[to] == WALL) {
-            error("Can't go into a wall")
+        if (map[from] == FREE) {
+            return
         }
 
-        if (map[to] != FREE) {
-            moveObject(
-                at = to,
-                direction = direction
-            )
+        if (map[from] == WALL) {
+            error("Can't push into a wall")
         }
 
-        map[to] = map[at]
-        map[at] = FREE
+        addTo += from
+
+        var objectStart = from
+        var width = 1
+        val height = 1
+
+        if (map[from] == WIDE_BOX.last()) {
+            objectStart = from.move(dx = -1)
+            addTo += objectStart
+            width = 2
+        } else if (map[from] == WIDE_BOX.first()) {
+            addTo += from.move(dx = 1)
+            width = 2
+        }
+
+        when (direction) {
+            Direction.N -> {
+                (0 until width).forEach { xOffset ->
+                    addPositionsToMove(
+                        addTo = addTo,
+                        from = objectStart.move(direction).move(dx = xOffset),
+                        direction = direction,
+                    )
+                }
+            }
+
+            Direction.S -> {
+                (0 until width).forEach { xOffset ->
+                    addPositionsToMove(
+                        addTo = addTo,
+                        from = objectStart.move(dx = xOffset, dy = height),
+                        direction = direction,
+                    )
+                }
+            }
+
+            Direction.W -> {
+                (0 until height).forEach { yOffset ->
+                    addPositionsToMove(
+                        addTo = addTo,
+                        from = objectStart.move(direction).move(dy = yOffset),
+                        direction = direction,
+                    )
+                }
+            }
+
+            Direction.E -> {
+                (0 until height).forEach { yOffset ->
+                    addPositionsToMove(
+                        addTo = addTo,
+                        from = objectStart.move(dx = width, dy = yOffset),
+                        direction = direction,
+                    )
+                }
+            }
+        }
     }
 
     while (directions.isNotEmpty()) {
-        val direction = directions.pop()
+        val direction = directions.pop()!!
+        val positionsToMove = mutableSetOf<Position>()
+
+//        println("Move ${direction.marker}")
 
         runCatching {
-            moveObject(
-                at = robotPosition,
-                direction = direction,
+            addPositionsToMove(
+                addTo = positionsToMove,
+                from = robotPosition,
+                direction = direction
             )
-            robotPosition = robotPosition.step(direction)
+
+            val positionComparator = when (direction) {
+                Direction.N ->
+                    compareBy(Position::y)
+
+                Direction.S ->
+                    compareBy(Position::y).reversed()
+
+                Direction.W ->
+                    compareBy(Position::x)
+
+                Direction.E ->
+                    compareBy(Position::x).reversed()
+            }
+
+            positionsToMove.sortedWith(positionComparator).forEach { positionToMove ->
+                map[positionToMove.move(direction)] = map[positionToMove]
+                map[positionToMove] = FREE
+            }
+
+            robotPosition = robotPosition.move(direction)
+        }
+
+//        printMap(map)
+//        println()
+
+        map.forEachIndexed { i, row ->
+            row.joinToString("").also {
+                check(
+                    !it.contains("[[")
+                            && !it.contains("]]")
+                            && !it.contains(".]")
+                            && !it.contains("[.")
+                ) {
+                    "Box teared apart at row ${i + 1}"
+                }
+            }
         }
     }
 
-    printMap(map)
-
-    println(
-        map
-            .flatMapIndexed { y, row ->
-                row.mapIndexed { x, cell ->
-                    if (cell == BOX) {
-                        y * 100 + x
-                    } else {
-                        0
-                    }
+    val coordinateSum = map
+        .flatMapIndexed { y, row ->
+            row.mapIndexed { x, cell ->
+                if (cell == BOX || cell == WIDE_BOX.first()) {
+                    y * 100 + x
+                } else {
+                    0
                 }
             }
-            .sum()
-    )
+        }
+        .sum()
+
+    println(coordinateSum)
 }

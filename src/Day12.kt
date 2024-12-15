@@ -27,7 +27,7 @@ fun main() {
                         addAll(
                             Direction
                                 .values()
-                                .map(positionToCheck::step)
+                                .map(positionToCheck::move)
                         )
                     }
                 }
@@ -64,28 +64,28 @@ data class GardenRegion(
             var sideStartCount = 0
 
             // Beginning of a left edge.
-            if (position.step(W) !in plots
-                && (position.step(N) !in plots || position.step(W).step(N) in plots)
+            if (position.move(W) !in plots
+                && (position.move(N) !in plots || position.move(W).move(N) in plots)
             ) {
                 sideStartCount++
             }
 
             // Beginning of a right edge.
-            if (position.step(E) !in plots
-                && (position.step(N) !in plots || position.step(E).step(N) in plots)
+            if (position.move(E) !in plots
+                && (position.move(N) !in plots || position.move(E).move(N) in plots)
             ) {
                 sideStartCount++
             }
 
             // Beginning of a top edge.
-            if (position.step(N) !in plots
-                && (position.step(W) !in plots || position.step(N).step(W) in plots)
+            if (position.move(N) !in plots
+                && (position.move(W) !in plots || position.move(N).move(W) in plots)
             ) {
                 sideStartCount++
             }
 
             // Beginning of a bottom edge.
-            if (position.step(S) !in plots && (position.step(W) !in plots || position.step(S).step(W) in plots)) {
+            if (position.move(S) !in plots && (position.move(W) !in plots || position.move(S).move(W) in plots)) {
                 sideStartCount++
             }
 
