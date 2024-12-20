@@ -1,5 +1,6 @@
 import kotlin.io.path.Path
 import kotlin.io.path.readText
+import kotlin.math.abs
 
 /**
  * Reads lines from the given input txt file.
@@ -37,6 +38,9 @@ value class Position(private val pair: Pair<Int, Int>) {
             x = x + dx,
             y = y + dy,
         )
+
+    fun distanceTo(other: Position): Int =
+        abs(other.x - this.x) + abs(other.y - this.y)
 
     operator fun component1(): Int = x
 
