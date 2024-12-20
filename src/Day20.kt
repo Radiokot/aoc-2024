@@ -8,8 +8,8 @@ fun main() = runBlocking(Dispatchers.Default) {
     val FINISH = 'E'
     val WALL = '#'
 
-    // 20 takes around 30 seconds, 2 – just around 2.
-    val maxCheatDistance = 20
+    // 20 takes around 40 seconds, 2 – just around 2.
+    val maxCheatDistance = 2
     val benefitThreshold = 100
     val map = readInput(day = 20, test = false)
         .filterNot(String::isEmpty)
@@ -55,27 +55,19 @@ fun main() = runBlocking(Dispatchers.Default) {
     fun findCheats(from: Position): Map<Int, MutableSet<String>> {
         val fromIndex = originalPath.indexOf(from)
         val result = mutableMapOf<Int, MutableSet<String>>()
-        val toCheck = mutableSetOf(from)
-        val visited = mutableSetOf<Position>()
 
-        do {
-            val current = toCheck.first()
-            toCheck -= current
-            visited += current
-
-            if (current in originalPathSet) {
+        for (x in (from.x - maxCheatDistance..from.x + maxCheatDistance)) {
+            for (y in (from.y - maxCheatDistance..from.y + maxCheatDistance)) {
+                val current = Position(x, y)
                 val distance = current.distanceTo(from)
-                val benefit = originalPath.indexOf(current) - fromIndex - distance
-                if (benefit > 0) {
-                    result.getOrPut(benefit, ::mutableSetOf) += "$from$current"
+                if (current in originalPathSet && distance <= maxCheatDistance) {
+                    val benefit = originalPath.indexOf(current) - fromIndex - distance
+                    if (benefit > 0) {
+                        result.getOrPut(benefit, ::mutableSetOf) += "$from$current"
+                    }
                 }
             }
-
-            Direction.values()
-                .map(current::move)
-                .filter { it !in visited && it.distanceTo(from) <= maxCheatDistance }
-                .also(toCheck::addAll)
-        } while (toCheck.isNotEmpty())
+        }
 
         return result
     }

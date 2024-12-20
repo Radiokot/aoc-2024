@@ -49,6 +49,9 @@ value class Position(private val pair: Pair<Int, Int>) {
     infix fun touches(other: Position): Boolean =
         this.y == other.y && (this.x == other.x + 1 || this.x == other.x - 1) ||
                 this.x == other.x && (this.y == other.y + 1 || this.y == other.y - 1)
+
+    override fun toString(): String =
+        "{$x, $y}"
 }
 
 operator fun <T : Any?> List<List<T>>.get(position: Position): T =
