@@ -62,3 +62,12 @@ fun <T : Any?> List<List<T>>.getOrNull(position: Position): T? =
 
 operator fun <T : Any?> List<MutableList<T>>.set(position: Position, value: T): T =
     this[position.y].set(position.x, value)
+
+fun <T : Any?> List<List<T>>.positionOf(element: T): Position =
+    first { it.contains(element) }
+        .let { row ->
+            Position(
+                x = row.indexOf(element),
+                y = indexOf(row),
+            )
+        }
