@@ -1,7 +1,9 @@
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import java.util.*
 import kotlin.math.floor
 
-fun main() {
+fun main() = runBlocking(Dispatchers.Default) {
     val seeds = readInput(day = 22, test = false)
         .filter(String::isNotEmpty)
         .map(String::toLong)
@@ -24,38 +26,50 @@ fun main() {
 
     println(seedNumbers.sumOf { it.last() })
 
-    val seedFirstPriceBySequence: List<Map<String, Long>> = List(seeds.size) { seedIndex ->
-        buildMap {
-            val sequenceBuffer = LinkedList<Long>()
-            seedNumbers[seedIndex].forEachIndexed numberForeach@{ numberIndex, number ->
-                if (numberIndex == 0) {
-                    return@numberForeach
+    val seedFirstPriceBySequence: List<Map<String, Long>> = seedNumbers
+        .asFlow()
+        .map { particularSeedNumbers ->
+            async {
+                buildMap {
+                    val sequenceBuffer = LinkedList<Long>()
+                    particularSeedNumbers.forEachIndexed numberForeach@{ numberIndex, number ->
+                        if (numberIndex == 0) {
+                            return@numberForeach
+                        }
+
+                        val currentPrice = number % 10
+                        val previousPrice = particularSeedNumbers[numberIndex - 1] % 10
+
+                        sequenceBuffer += currentPrice - previousPrice
+
+                        if (sequenceBuffer.size > 4) {
+                            sequenceBuffer.removeFirst()
+                        } else if (sequenceBuffer.size < 4) {
+                            return@numberForeach
+                        }
+
+                        val key = sequenceBuffer.joinToString(",")
+                        // Because monkey leaves after the first time.
+                        putIfAbsent(key, currentPrice)
+                    }
                 }
-
-                val currentPrice = number % 10
-                val previousPrice = seedNumbers[seedIndex][numberIndex - 1] % 10
-
-                sequenceBuffer += currentPrice - previousPrice
-
-                if (sequenceBuffer.size > 4) {
-                    sequenceBuffer.removeFirst()
-                } else if (sequenceBuffer.size < 4) {
-                    return@numberForeach
-                }
-
-                val key = sequenceBuffer.joinToString(",")
-                // Because monkey leaves after the first time.
-                putIfAbsent(key, currentPrice)
             }
         }
-    }
+        .toList()
+        .awaitAll()
 
     val bestFuckingDeal = seedFirstPriceBySequence
         .flatMapTo(mutableSetOf(), Map<String, *>::keys)
-        .maxOfOrNull { sequence ->
-            // Find a sequence which gives the best total price among all the seeds.
-            seedFirstPriceBySequence.sumOf { it[sequence] ?: 0L }
+        .asFlow()
+        .map { sequence ->
+            async {
+                // Find a sequence which gives the best total price among all the seeds.
+                seedFirstPriceBySequence.sumOf { it[sequence] ?: 0L }
+            }
         }
+        .toList()
+        .awaitAll()
+        .max()
 
     println(bestFuckingDeal)
 }
