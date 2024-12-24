@@ -48,7 +48,46 @@ fun main() {
     } while (computedGates.size != gates.size)
 
     println(
-       getBinaryValue('z')
+        getBinaryValue('z')
             .toLong(2)
     )
+
+    println(
+        """
+digraph {
+  subgraph x {
+    node [style=filled,color=pink];
+    ${wireValues.keys.filter { it.startsWith('x') }.sorted().joinToString(separator = " -> ")};
+  }
+  subgraph y {
+    node [style=filled,color=violet];
+    ${wireValues.keys.filter { it.startsWith('y') }.sorted().joinToString(separator = " -> ")};
+  }
+  subgraph and {
+    node [style=filled,color=lightgreen];
+    ${gates.filter { it.first.second == "AND" }.joinToString(separator = "; ", transform = { it.second })};
+  }
+  subgraph or {
+    node [style=filled,color=yellow];
+    ${gates.filter { it.first.second == "OR" }.joinToString(separator = "; ", transform = { it.second })};
+  }
+  subgraph xor {
+    node [style=filled,color=lightskyblue];
+    ${gates.filter { it.first.second == "XOR" }.joinToString(separator = "; ", transform = { it.second })};
+  }
+  subgraph z {
+    ${gates.filter { it.second.startsWith('z') }.map { it.second }.sorted().joinToString(separator = " -> ")};
+  }
+    """
+    )
+
+    gates.forEach { gate ->
+        println("  ${gate.first.first} -> ${gate.second}; ${gate.first.third} -> ${gate.second};")
+    }
+
+    println("}")
+
+    // Paste to https://dreampuf.github.io/GraphvizOnline.
+    // Zs must be blue, combine blue and yellow
+    // X and Y are connected to a yellow via green
 }
